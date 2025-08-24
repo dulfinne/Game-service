@@ -2,5 +2,18 @@ spring:
   application:
     name: game-service
 
+  data:
+    mongodb:
+      uri: ${MONGO_URL:mongodb://localhost:27017}
+      auto-index-creation: true
+      database: game_db
+
+app:
+  common:
+    random-number:
+      enabled: true
+      min: 10
+      max: 15
+
 server:
   port: 8091
