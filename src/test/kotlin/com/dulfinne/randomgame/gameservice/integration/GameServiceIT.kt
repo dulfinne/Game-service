@@ -4,20 +4,19 @@ import com.dulfinne.randomgame.gameservice.dto.request.GameRequest
 import com.dulfinne.randomgame.gameservice.dto.request.GuessRequest
 import com.dulfinne.randomgame.gameservice.dto.response.GameResponse
 import com.dulfinne.randomgame.gameservice.entity.GameStatus
+import com.dulfinne.randomgame.gameservice.exception.ErrorResponse
 import com.dulfinne.randomgame.gameservice.repository.GameRepository
 import com.dulfinne.randomgame.gameservice.util.ApiPaths
 import com.dulfinne.randomgame.gameservice.util.ExceptionKeys
 import com.dulfinne.randomgame.gameservice.util.GameTestData
-import io.restassured.http.ContentType
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
-import org.hamcrest.CoreMatchers.containsString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.http.HttpStatus
+import org.springframework.http.HttpMethod
 
 class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() {
 
@@ -38,13 +37,14 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
             val expected = GameTestData.getGameResponse()
                     .copy(userGuess = null, guessedNumber = null)
 
-            val result = withAuth(GameTestData.USERNAME)
-                    .`when`()
-                    .get("${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}")
-                    .then()
-                    .statusCode(HttpStatus.OK.value())
-                    .extract()
-                    .`as`(GameResponse::class.java)
+            val result = buildRequest(GameTestData.USERNAME,
+                HttpMethod.GET,
+                "${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}")
+                    .exchange()
+                    .expectStatus().isOk
+                    .expectBody(GameResponse::class.java)
+                    .returnResult()
+                    .responseBody
 
             assertThat(result).isEqualTo(expected)
         }
@@ -56,26 +56,32 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
 
             val errorMessage = ExceptionKeys.GAME_NOT_FOUND.format(GameTestData.ID)
 
-            withAuth(GameTestData.UNKNOWN_USERNAME)
-                    .`when`()
-                    .get("${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}")
-                    .then()
-                    .statusCode(HttpStatus.NOT_FOUND.value())
-                    .body("message", containsString(errorMessage))
-                    .extract()
+            val result = buildRequest(GameTestData.UNKNOWN_USERNAME,
+                HttpMethod.GET,
+                "${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}")
+                    .exchange()
+                    .expectStatus().isNotFound
+                    .expectBody(ErrorResponse::class.java)
+                    .returnResult()
+                    .responseBody
+
+            assertThat(result?.message).isEqualTo(errorMessage)
         }
 
         @Test
         fun givenUnknownGameId_whenGetGame_thenReturnErrorResponse(): Unit = runBlocking {
             val errorMessage = ExceptionKeys.GAME_NOT_FOUND.format(GameTestData.ID)
 
-            withAuth(GameTestData.USERNAME)
-                    .`when`()
-                    .get("${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}")
-                    .then()
-                    .statusCode(HttpStatus.NOT_FOUND.value())
-                    .body("message", containsString(errorMessage))
-                    .extract()
+            val result = buildRequest(GameTestData.USERNAME,
+                HttpMethod.GET,
+                "${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}")
+                    .exchange()
+                    .expectStatus().isNotFound
+                    .expectBody(ErrorResponse::class.java)
+                    .returnResult()
+                    .responseBody
+
+            assertThat(result?.message).isEqualTo(errorMessage)
         }
     }
 
@@ -88,23 +94,25 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
             val expected = GameTestData.getGameResponse()
                     .copy(userGuess = null, guessedNumber = null)
 
-            val result = withAuth(GameTestData.USERNAME)
-                    .contentType(ContentType.JSON)
-                    .body(request)
-                    .`when`()
-                    .post(ApiPaths.GAME_BASE_URL)
-                    .then()
-                    .statusCode(HttpStatus.CREATED.value())
-                    .extract()
-                    .`as`(GameResponse::class.java)
+            val result = buildRequest(GameTestData.USERNAME,
+                HttpMethod.POST,
+                ApiPaths.GAME_BASE_URL,
+                request)
+                    .exchange()
+                    .expectStatus().isCreated
+                    .expectBody(GameResponse::class.java)
+                    .returnResult()
+                    .responseBody
 
             assertThat(result)
                     .usingRecursiveComparison()
                     .ignoringFields(GameTestData.ID_FIELD)
                     .isEqualTo(expected)
 
-            val game = gameRepository.findById(result.id)
-                    .awaitSingle()
+            val game = result?.let {
+                gameRepository.findById(it.id)
+                        .awaitSingle()
+            }
 
             assertThat(game)
                     .usingRecursiveComparison()
@@ -128,15 +136,15 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
             val expected = GameTestData.getGameResponse()
                     .copy(statusId = GameStatus.WON)
 
-            val result = withAuth(GameTestData.USERNAME)
-                    .contentType(ContentType.JSON)
-                    .body(request)
-                    .`when`()
-                    .post("${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}${ApiPaths.GUESS}")
-                    .then()
-                    .statusCode(HttpStatus.OK.value())
-                    .extract()
-                    .`as`(GameResponse::class.java)
+            val result = buildRequest(GameTestData.USERNAME,
+                HttpMethod.POST,
+                "${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}${ApiPaths.GUESS}",
+                request)
+                    .exchange()
+                    .expectStatus().isOk
+                    .expectBody(GameResponse::class.java)
+                    .returnResult()
+                    .responseBody
 
             assertThat(result).isEqualTo(expected)
         }
@@ -149,15 +157,17 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
             val request = GuessRequest(GameTestData.USER_WIN_GUESS)
             val errorMessage = ExceptionKeys.GAME_NOT_FOUND.format(GameTestData.ID)
 
-            withAuth(GameTestData.UNKNOWN_USERNAME)
-                    .contentType(ContentType.JSON)
-                    .body(request)
-                    .`when`()
-                    .post("${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}${ApiPaths.GUESS}")
-                    .then()
-                    .statusCode(HttpStatus.NOT_FOUND.value())
-                    .body("message", containsString(errorMessage))
-                    .extract()
+            val result = buildRequest(GameTestData.UNKNOWN_USERNAME,
+                HttpMethod.POST,
+                "${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}${ApiPaths.GUESS}",
+                request)
+                    .exchange()
+                    .expectStatus().isNotFound
+                    .expectBody(ErrorResponse::class.java)
+                    .returnResult()
+                    .responseBody
+
+            assertThat(result?.message).isEqualTo(errorMessage)
         }
 
         @Test
@@ -165,15 +175,17 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
             val errorMessage = ExceptionKeys.GAME_NOT_FOUND.format(GameTestData.ID)
             val request = GuessRequest(GameTestData.USER_WIN_GUESS)
 
-            withAuth(GameTestData.USERNAME)
-                    .contentType(ContentType.JSON)
-                    .body(request)
-                    .`when`()
-                    .post("${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}${ApiPaths.GUESS}")
-                    .then()
-                    .statusCode(HttpStatus.NOT_FOUND.value())
-                    .body("message", containsString(errorMessage))
-                    .extract()
+            val result = buildRequest(GameTestData.USERNAME,
+                HttpMethod.POST,
+                "${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}${ApiPaths.GUESS}",
+                request)
+                    .exchange()
+                    .expectStatus().isNotFound
+                    .expectBody(ErrorResponse::class.java)
+                    .returnResult()
+                    .responseBody
+
+            assertThat(result?.message).isEqualTo(errorMessage)
         }
 
         @Test
@@ -188,15 +200,15 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                 val expected = GameTestData.getGameResponse()
                         .copy(statusId = GameStatus.LOST, userGuess = GameTestData.USER_LOOSE_GUESS)
 
-                val result = withAuth(GameTestData.USERNAME)
-                        .contentType(ContentType.JSON)
-                        .body(request)
-                        .`when`()
-                        .post("${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}${ApiPaths.GUESS}")
-                        .then()
-                        .statusCode(HttpStatus.OK.value())
-                        .extract()
-                        .`as`(GameResponse::class.java)
+                val result = buildRequest(GameTestData.USERNAME,
+                    HttpMethod.POST,
+                    "${ApiPaths.GAME_BASE_URL}/${GameTestData.ID}${ApiPaths.GUESS}",
+                    request)
+                        .exchange()
+                        .expectStatus().isOk
+                        .expectBody(GameResponse::class.java)
+                        .returnResult()
+                        .responseBody
 
                 assertThat(result).isEqualTo(expected)
             }
