@@ -9,8 +9,6 @@ import com.dulfinne.randomgame.gameservice.repository.GameRepository
 import com.dulfinne.randomgame.gameservice.util.ApiPaths
 import com.dulfinne.randomgame.gameservice.util.ExceptionKeys
 import com.dulfinne.randomgame.gameservice.util.GameTestData
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -115,6 +113,21 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                     .ignoringFields(GameTestData.ID_FIELD, GameTestData.GUESSED_NUMBER_FIELD)
                     .isEqualTo(GameTestData.getGame()
                             .copy(userGuess = null))
+        }
+
+        @Test
+        fun givenNoRequestBody_whenCreateGame_thenReturnGameResponse(): Unit = runBlocking {
+            val result = buildRequest(GameTestData.USERNAME,
+                HttpMethod.POST,
+                ApiPaths.GAME_BASE_URL
+            )
+                    .exchange()
+                    .expectStatus().is5xxServerError
+                    .expectBody(ErrorResponse::class.java)
+                    .returnResult()
+                    .responseBody
+
+            assertThat(result?.message).isEqualTo(ExceptionKeys.UNKNOWN_ERROR)
         }
     }
 
