@@ -28,6 +28,7 @@ abstract class IntegrationTestBase {
         @Container
         val container = MongoDBContainer(DockerImageName.parse("mongo:8.0.4"))
 
+        @JvmStatic
         @DynamicPropertySource
         fun mongoProperties(registry: DynamicPropertyRegistry) {
             registry.add("spring.data.mongodb.uri", container::getConnectionString)
