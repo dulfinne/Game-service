@@ -27,11 +27,16 @@ jobs:
       - name: Make Gradle Wrapper executable
         run: chmod +x ./gradlew
 
-      - name: Build with Gradle Wrapper
-        run: ./gradlew build
-        working-directory: .
+      - name: Build (without tests)
+        run: ./gradlew build -x test
+
+      - name: Run tests
+        id: tests
+        run: ./gradlew test
+        continue-on-error: true
 
       - name: Upload test reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
@@ -42,6 +47,10 @@ jobs:
         with:
           name: game-service-jar
           path: ./build/libs/*.jar
+
+      - name: Fail if tests failed
+        if: steps.tests.outcome != 'success'
+        run: exit 1
 
   docker:
     runs-on: ubuntu-latest
