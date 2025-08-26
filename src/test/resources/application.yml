@@ -2,8 +2,9 @@ spring:
   application:
     name: game-service
 
-  config:
-    import: optional:configserver:http://localhost:8888
+  cloud:
+    config:
+      enabled: false
 
   data:
     mongodb:
