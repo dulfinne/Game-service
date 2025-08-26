@@ -8,7 +8,7 @@ import com.dulfinne.randomgame.gameservice.entity.GameStatus
 fun Game.toResponse() = GameResponse(
     id = id!!,
     username = username,
-    guessedNumber = if (statusId != GameStatus.PENDING.id) this.guessedNumber else null,
+    guessedNumber = this.guessedNumber.takeIf { statusId != GameStatus.PENDING.id },
     userGuess = userGuess,
     bid = bid,
     statusId = GameStatus.fromId(statusId)
