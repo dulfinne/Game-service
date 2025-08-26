@@ -1,0 +1,11 @@
+spring:
+
+  cloud:
+    config:
+      enabled: false
+
+  data:
+    mongodb:
+      uri: ${MONGO_URL:mongodb://localhost:27017}
+      auto-index-creation: true
+      database: test_game_db
