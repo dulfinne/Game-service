@@ -23,7 +23,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
     @BeforeEach
     fun setUp(): Unit = runBlocking {
         gameRepository.deleteAll()
-                .awaitSingleOrNull()
     }
 
     @Nested
@@ -33,7 +32,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
         fun givenSameUserAuth_whenGetGame_thenReturnGameResponse(): Unit = runBlocking {
             gameRepository.save(GameTestData.getGame()
                     .copy(userGuess = null))
-                    .awaitSingle()
             val expected = GameTestData.getGameResponse()
                     .copy(userGuess = null, guessedNumber = null)
 
@@ -52,7 +50,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
         @Test
         fun givenOtherUserAuth_whenGetGame_thenReturnErrorResponse(): Unit = runBlocking {
             gameRepository.save(GameTestData.getGame())
-                    .awaitSingle()
 
             val errorMessage = ExceptionKeys.GAME_NOT_FOUND.format(GameTestData.ID)
 
@@ -111,7 +108,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
 
             val game = result?.let {
                 gameRepository.findById(it.id)
-                        .awaitSingle()
             }
 
             assertThat(game)
@@ -129,7 +125,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
         fun givenSameAuthAndGuessed_whenGuessNumber_thenReturnGameResponse(): Unit = runBlocking {
             gameRepository.save(GameTestData.getGame()
                     .copy(userGuess = null))
-                    .awaitSingle()
 
             val request = GuessRequest(GameTestData.USER_WIN_GUESS)
 
@@ -152,7 +147,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
         @Test
         fun givenOtherAuth_whenGuessNumber_thenReturnErrorResponse(): Unit = runBlocking {
             gameRepository.save(GameTestData.getGame())
-                    .awaitSingle()
 
             val request = GuessRequest(GameTestData.USER_WIN_GUESS)
             val errorMessage = ExceptionKeys.GAME_NOT_FOUND.format(GameTestData.ID)
@@ -193,7 +187,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
             runBlocking {
                 gameRepository.save(GameTestData.getGame()
                         .copy(userGuess = null))
-                        .awaitSingle()
 
                 val request = GuessRequest(GameTestData.USER_LOOSE_GUESS)
 

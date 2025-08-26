@@ -12,24 +12,27 @@ import com.dulfinne.randomgame.gameservice.exception.EntityNotFoundException
 import com.dulfinne.randomgame.gameservice.mapper.toGame
 import com.dulfinne.randomgame.gameservice.mapper.toResponse
 import com.dulfinne.randomgame.gameservice.repository.GameRepository
+import com.dulfinne.randomgame.gameservice.repository.GameSortingRepository
 import com.dulfinne.randomgame.gameservice.service.GameService
 import com.dulfinne.randomgame.gameservice.util.ExceptionKeys
+import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.beans.factory.annotation.Lookup
 import org.springframework.stereotype.Service
-import kotlinx.coroutines.reactor.awaitSingle
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.domain.PageRequest
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class GameServiceImpl(val gameRepository: GameRepository) : GameService {
+class GameServiceImpl(
+    val gameRepository: GameRepository,
+    val gameSortingRepository: GameSortingRepository,
+) : GameService {
 
     @Lookup
     fun getGameRound(): GameRound = throw UnsupportedOperationException()
 
     @Transactional(readOnly = true)
     override suspend fun getAllGames(request: PaginationRequest): List<GameResponse> =
-        gameRepository.findAllBy(PageRequest.of(request.offset, request.limit))
+        gameSortingRepository.findAllBy(PageRequest.of(request.offset, request.limit))
                 .collectList()
                 .awaitSingle()
                 .map { it.toResponse() }
@@ -39,12 +42,11 @@ class GameServiceImpl(val gameRepository: GameRepository) : GameService {
         username: String,
         request: PaginationRequest
     ): List<GameResponse> =
-        gameRepository.findAllByUsername(username,
+        gameSortingRepository.findAllByUsername(username,
             PageRequest.of(request.offset, request.limit))
                 .collectList()
                 .awaitSingle()
                 .map { it.toResponse() }
-
 
     @Transactional(readOnly = true)
     override suspend fun getGameById(username: String, gameId: String): GameResponse {
@@ -58,7 +60,6 @@ class GameServiceImpl(val gameRepository: GameRepository) : GameService {
         val secretNumber = getGameRound().guessedNumber
         val game = request.toGame(username, secretNumber)
         val savedGame = gameRepository.save(game)
-                .awaitSingle()
         return savedGame.toResponse()
     }
 
@@ -81,13 +82,11 @@ class GameServiceImpl(val gameRepository: GameRepository) : GameService {
         }
 
         val savedGame = gameRepository.save(game)
-                .awaitSingle()
         return savedGame.toResponse()
     }
 
     private suspend fun getGameIfExists(gameId: String): Game {
         return gameRepository.findById(gameId)
-                .awaitSingleOrNull()
             ?: throw EntityNotFoundException(ExceptionKeys.GAME_NOT_FOUND.format(gameId))
     }
 
