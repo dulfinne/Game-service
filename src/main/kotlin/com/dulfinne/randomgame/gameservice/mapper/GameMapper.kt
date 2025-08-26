@@ -19,6 +19,6 @@ fun GameRequest.toGame(username: String, guessedNumber: Int) = Game(
     username = username,
     guessedNumber = guessedNumber,
     userGuess = null,
-    bid = bid!!,
+    bid = bid,
     statusId = GameStatus.PENDING.id
 )
