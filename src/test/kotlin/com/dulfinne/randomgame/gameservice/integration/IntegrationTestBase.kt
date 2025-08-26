@@ -30,7 +30,7 @@ abstract class IntegrationTestBase {
 
         @DynamicPropertySource
         fun mongoProperties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.data.mongodb.uri", container::getReplicaSetUrl)
+            registry.add("spring.data.mongodb.uri", container::getConnectionString)
         }
     }
 
