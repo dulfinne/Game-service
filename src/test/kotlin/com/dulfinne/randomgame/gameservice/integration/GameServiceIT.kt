@@ -15,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpMethod
+import org.testcontainers.shaded.org.awaitility.Awaitility
+import java.time.Duration
 
 class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() {
 
@@ -136,11 +138,11 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
 
         @Test
         fun givenSameAuthAndGuessed_whenGuessNumber_thenReturnGameResponse(): Unit = runBlocking {
+            val consumer = createPaymentConsumer()
             gameRepository.save(GameTestData.getGame()
                     .copy(userGuess = null))
 
             val request = GuessRequest(GameTestData.USER_WIN_GUESS)
-
             val expected = GameTestData.getGameResponse()
                     .copy(statusId = GameStatus.WON)
 
@@ -155,6 +157,16 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                     .responseBody
 
             assertThat(result).isEqualTo(expected)
+            Awaitility.await()
+                    .atMost(Duration.ofSeconds(3))
+                    .untilAsserted {
+                        consumer.poll(Duration.ofSeconds(100))
+                                .lastOrNull()
+                                ?.let {
+                                    assertThat(it.key()).isEqualTo(GameTestData.USERNAME)
+                                    assertThat(it.value()).isEqualTo(GameTestData.getPayment())
+                                }
+                    }
         }
 
         @Test
@@ -198,13 +210,15 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
         @Test
         fun givenSameAuthAndNotGuessed_whenGuessNumber_thenReturnGameResponse(): Unit =
             runBlocking {
+                val consumer = createPaymentConsumer()
                 gameRepository.save(GameTestData.getGame()
                         .copy(userGuess = null))
 
                 val request = GuessRequest(GameTestData.USER_LOOSE_GUESS)
-
                 val expected = GameTestData.getGameResponse()
                         .copy(statusId = GameStatus.LOST, userGuess = GameTestData.USER_LOOSE_GUESS)
+                val expectedPayment = GameTestData.getPayment()
+                        .copy(positiveFlag = false)
 
                 val result = buildRequest(GameTestData.USERNAME,
                     HttpMethod.POST,
@@ -217,6 +231,16 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                         .responseBody
 
                 assertThat(result).isEqualTo(expected)
+                Awaitility.await()
+                        .atMost(Duration.ofSeconds(3))
+                        .untilAsserted {
+                            consumer.poll(Duration.ofSeconds(100))
+                                    .lastOrNull()
+                                    ?.let {
+                                        assertThat(it.key()).isEqualTo(GameTestData.USERNAME)
+                                        assertThat(it.value()).isEqualTo(expectedPayment)
+                                    }
+                        }
             }
     }
 }

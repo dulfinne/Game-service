@@ -9,6 +9,8 @@ import com.dulfinne.randomgame.gameservice.entity.Game
 import com.dulfinne.randomgame.gameservice.entity.GameStatus
 import com.dulfinne.randomgame.gameservice.exception.ActionNotAllowedException
 import com.dulfinne.randomgame.gameservice.exception.EntityNotFoundException
+import com.dulfinne.randomgame.gameservice.kafka.entity.Payment
+import com.dulfinne.randomgame.gameservice.kafka.service.KafkaProducerService
 import com.dulfinne.randomgame.gameservice.mapper.toGame
 import com.dulfinne.randomgame.gameservice.mapper.toResponse
 import com.dulfinne.randomgame.gameservice.repository.GameRepository
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional
 class GameServiceImpl(
     val gameRepository: GameRepository,
     val gameSortingRepository: GameSortingRepository,
+    val kafkaService: KafkaProducerService
 ) : GameService {
 
     @Lookup
@@ -74,7 +77,9 @@ class GameServiceImpl(
         checkCanGuess(game)
 
         val userGuess = request.userGuess
-        val status = if (userGuess == game.guessedNumber) GameStatus.WON else GameStatus.LOST
+
+        val hasWon = userGuess == game.guessedNumber
+        val status = if (hasWon) GameStatus.WON else GameStatus.LOST
 
         game.apply {
             this.userGuess = userGuess
@@ -82,6 +87,11 @@ class GameServiceImpl(
         }
 
         val savedGame = gameRepository.save(game)
+        kafkaService.sendGamePayment(Payment(
+            amount = game.bid,
+            username = game.username,
+            positiveFlag = hasWon))
+
         return savedGame.toResponse()
     }
 

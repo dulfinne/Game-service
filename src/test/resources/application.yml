@@ -11,3 +11,9 @@ spring:
       uri: ${MONGO_URL:mongodb://localhost:27017}
       auto-index-creation: true
       database: test_game_db
+
+  kafka:
+    producer-id: prod-1
+    retries-num: 1
+    topics:
+      game-payments: game-payments-test-topic
