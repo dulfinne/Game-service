@@ -3,6 +3,7 @@ package com.dulfinne.randomgame.gameservice.util
 import com.dulfinne.randomgame.gameservice.dto.response.GameResponse
 import com.dulfinne.randomgame.gameservice.entity.Game
 import com.dulfinne.randomgame.gameservice.entity.GameStatus
+import com.dulfinne.randomgame.gameservice.kafka.entity.Payment
 import java.math.BigDecimal
 
 object GameTestData {
@@ -24,4 +25,6 @@ object GameTestData {
 
     fun getGameResponse() =
         GameResponse(ID, USERNAME, GUESSED_NUMBER, USER_WIN_GUESS, BID, GameStatus.PENDING)
+
+    fun getPayment() = Payment(amount = BID, username = USERNAME, positiveFlag = true)
 }

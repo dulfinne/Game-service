@@ -25,6 +25,7 @@ repositories {
 val coroutinesVersion = "1.9.0"
 val randomNumberStarterVersion = "v1.0.3"
 val assertJVersion = "3.27.3"
+val jacksonVersion = "2.15.2"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
@@ -36,12 +37,16 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("com.github.dulfinne:random-number-starter:$randomNumberStarterVersion:plain")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.kafka:spring-kafka")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.assertj:assertj-core:$assertJVersion")
     testImplementation("org.testcontainers:mongodb")
     testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.springframework.kafka:spring-kafka-test")
+    testImplementation("org.testcontainers:kafka")
+    testImplementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
