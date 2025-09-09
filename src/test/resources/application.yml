@@ -18,3 +18,7 @@ spring:
     retries-num: 1
     topics:
       game-payments: game-payments-test-topic
+
+payment:
+  sender:
+    type: kafka

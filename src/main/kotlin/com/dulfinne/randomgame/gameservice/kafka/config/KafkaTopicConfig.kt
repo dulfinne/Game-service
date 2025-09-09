@@ -1,5 +1,6 @@
 package com.dulfinne.randomgame.gameservice.kafka.config
 
+import com.dulfinne.randomgame.gameservice.util.CommonConstants
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.springframework.context.annotation.Bean
@@ -18,7 +19,7 @@ class KafkaTopicConfig(val kafkaProperties: KafkaProperties) {
     }
 
     @Bean
-    fun ratePassengerTopic(): NewTopic =
-        TopicBuilder.name(kafkaProperties.topics.gamePayments)
+    fun gamePaymentTopic(): NewTopic =
+        TopicBuilder.name("${CommonConstants.OUTBOX_PREFIX}${kafkaProperties.topics.gamePayments}")
                 .build()
 }

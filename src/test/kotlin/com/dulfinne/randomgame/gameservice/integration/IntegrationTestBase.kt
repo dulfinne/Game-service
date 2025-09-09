@@ -2,7 +2,7 @@ package com.dulfinne.randomgame.gameservice.integration
 
 import com.dulfinne.randomgame.gameservice.kafka.config.KafkaProperties
 import com.dulfinne.randomgame.gameservice.kafka.entity.Payment
-import com.dulfinne.randomgame.gameservice.util.HeaderConstants
+import com.dulfinne.randomgame.gameservice.util.CommonConstants
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -59,7 +59,7 @@ abstract class IntegrationTestBase {
     ): WebTestClient.RequestHeadersSpec<*> {
         val request = webTestClient.method(method)
                 .uri(uri)
-                .header(HeaderConstants.USERNAME_HEADER, username)
+                .header(CommonConstants.USERNAME_HEADER, username)
                 .contentType(MediaType.APPLICATION_JSON)
 
         return body?.let { request.bodyValue(it) } ?: request
@@ -75,7 +75,7 @@ abstract class IntegrationTestBase {
         props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
 
         val consumer = KafkaConsumer<String, Payment>(props)
-        consumer.subscribe(listOf(kafkaProperties.topics.gamePayments))
+        consumer.subscribe(listOf("${CommonConstants.OUTBOX_PREFIX}${kafkaProperties.topics.gamePayments}"))
         return consumer
     }
 }
