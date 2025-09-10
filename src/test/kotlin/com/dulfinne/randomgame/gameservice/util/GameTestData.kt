@@ -20,6 +20,7 @@ object GameTestData {
 
     const val ID_FIELD = "id"
     const val GUESSED_NUMBER_FIELD = "guessedNumber"
+    const val CREATED_AT_FIELD = "createdAt"
 
     fun getGame() = Game(ID, USERNAME, GUESSED_NUMBER, USER_WIN_GUESS, BID, GameStatus.PENDING.id)
 
