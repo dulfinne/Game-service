@@ -88,6 +88,7 @@ class GameServiceImpl(
 
         val savedGame = gameRepository.save(game)
         paymentSender.send(Payment(
+            gameId = gameId,
             amount = game.bid,
             username = game.username,
             positiveFlag = hasWon))
