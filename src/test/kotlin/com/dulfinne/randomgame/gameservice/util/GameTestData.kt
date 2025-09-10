@@ -26,5 +26,5 @@ object GameTestData {
     fun getGameResponse() =
         GameResponse(ID, USERNAME, GUESSED_NUMBER, USER_WIN_GUESS, BID, GameStatus.PENDING)
 
-    fun getPayment() = Payment(amount = BID, username = USERNAME, positiveFlag = true)
+    fun getPayment() = Payment(gameId = ID, amount = BID, username = USERNAME, positiveFlag = true)
 }
