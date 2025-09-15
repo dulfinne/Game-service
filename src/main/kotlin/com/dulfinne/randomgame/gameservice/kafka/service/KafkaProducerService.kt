@@ -11,7 +11,7 @@ class KafkaProducerService(
     val kafkaTemplate: KafkaTemplate<String, Any>,
     val kafkaProperties: KafkaProperties
 ) {
-    fun sendGamePayment(request: Payment) =
+    suspend fun sendGamePayment(request: Payment) =
         kafkaTemplate.executeInTransaction { template ->
             template.send("${CommonConstants.OUTBOX_PREFIX}${kafkaProperties.topics.gamePayments}",
                 request.username,
