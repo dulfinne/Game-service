@@ -5,11 +5,13 @@ import com.dulfinne.randomgame.gameservice.dto.request.GuessRequest
 import com.dulfinne.randomgame.gameservice.dto.response.GameResponse
 import com.dulfinne.randomgame.gameservice.entity.GameStatus
 import com.dulfinne.randomgame.gameservice.exception.ErrorResponse
+import com.dulfinne.randomgame.gameservice.kafka.entity.Payment
 import com.dulfinne.randomgame.gameservice.repository.GameRepository
 import com.dulfinne.randomgame.gameservice.util.ApiPaths
 import com.dulfinne.randomgame.gameservice.util.ExceptionKeys
 import com.dulfinne.randomgame.gameservice.util.GameTestData
 import kotlinx.coroutines.runBlocking
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -18,7 +20,10 @@ import org.springframework.http.HttpMethod
 import org.testcontainers.shaded.org.awaitility.Awaitility
 import java.time.Duration
 
-class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() {
+class GameServiceIT(
+    val gameRepository: GameRepository,
+    val kafkaConsumer: KafkaConsumer<String, Payment>,
+) : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp(): Unit = runBlocking {
@@ -138,7 +143,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
 
         @Test
         fun givenSameAuthAndGuessed_whenGuessNumber_thenReturnGameResponse(): Unit = runBlocking {
-            val consumer = createPaymentConsumer()
             gameRepository.save(GameTestData.getGame()
                     .copy(userGuess = null))
 
@@ -160,7 +164,7 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
             Awaitility.await()
                     .atMost(Duration.ofSeconds(3))
                     .untilAsserted {
-                        consumer.poll(Duration.ofSeconds(100))
+                        kafkaConsumer.poll(Duration.ofSeconds(100))
                                 .lastOrNull()
                                 ?.let {
                                     assertThat(it.key()).isEqualTo(GameTestData.USERNAME)
@@ -210,7 +214,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
         @Test
         fun givenSameAuthAndNotGuessed_whenGuessNumber_thenReturnGameResponse(): Unit =
             runBlocking {
-                val consumer = createPaymentConsumer()
                 gameRepository.save(GameTestData.getGame()
                         .copy(userGuess = null))
 
@@ -234,7 +237,7 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                 Awaitility.await()
                         .atMost(Duration.ofSeconds(3))
                         .untilAsserted {
-                            consumer.poll(Duration.ofSeconds(100))
+                            kafkaConsumer.poll(Duration.ofSeconds(100))
                                     .lastOrNull()
                                     ?.let {
                                         assertThat(it.key()).isEqualTo(GameTestData.USERNAME)
