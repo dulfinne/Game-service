@@ -9,6 +9,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Lazy
 import org.springframework.kafka.support.serializer.JsonDeserializer
 import java.util.Properties
 
@@ -16,6 +17,7 @@ import java.util.Properties
 class KafkaConfig(val kafkaProperties: KafkaProperties) {
 
     @Bean
+    @Lazy
     fun createPaymentConsumer(): KafkaConsumer<String, Payment> {
         val props = Properties()
         props[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaContainer.bootstrapServers
