@@ -9,6 +9,6 @@ import org.springframework.data.mongodb.ReactiveMongoTransactionManager
 class MongoConfig {
 
     @Bean
-    fun transactionManager(dbFactory: ReactiveMongoDatabaseFactory): ReactiveMongoTransactionManager =
+    fun transactionManager(dbFactory: ReactiveMongoDatabaseFactory) =
         ReactiveMongoTransactionManager(dbFactory)
 }
