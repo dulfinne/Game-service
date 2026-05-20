@@ -5,18 +5,25 @@ import com.dulfinne.randomgame.gameservice.dto.request.GuessRequest
 import com.dulfinne.randomgame.gameservice.dto.response.GameResponse
 import com.dulfinne.randomgame.gameservice.entity.GameStatus
 import com.dulfinne.randomgame.gameservice.exception.ErrorResponse
+import com.dulfinne.randomgame.gameservice.kafka.entity.Payment
 import com.dulfinne.randomgame.gameservice.repository.GameRepository
 import com.dulfinne.randomgame.gameservice.util.ApiPaths
 import com.dulfinne.randomgame.gameservice.util.ExceptionKeys
 import com.dulfinne.randomgame.gameservice.util.GameTestData
 import kotlinx.coroutines.runBlocking
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpMethod
+import org.testcontainers.shaded.org.awaitility.Awaitility
+import java.time.Duration
 
-class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() {
+class GameServiceIT(
+    val gameRepository: GameRepository,
+    val kafkaConsumer: KafkaConsumer<String, Payment>,
+) : IntegrationTestBase() {
 
     @BeforeEach
     fun setUp(): Unit = runBlocking {
@@ -140,7 +147,6 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                     .copy(userGuess = null))
 
             val request = GuessRequest(GameTestData.USER_WIN_GUESS)
-
             val expected = GameTestData.getGameResponse()
                     .copy(statusId = GameStatus.WON)
 
@@ -155,6 +161,16 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                     .responseBody
 
             assertThat(result).isEqualTo(expected)
+            Awaitility.await()
+                    .atMost(Duration.ofSeconds(3))
+                    .untilAsserted {
+                        kafkaConsumer.poll(Duration.ofSeconds(100))
+                                .lastOrNull()
+                                ?.let {
+                                    assertThat(it.key()).isEqualTo(GameTestData.USERNAME)
+                                    assertThat(it.value()).isEqualTo(GameTestData.getPayment())
+                                }
+                    }
         }
 
         @Test
@@ -202,9 +218,10 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                         .copy(userGuess = null))
 
                 val request = GuessRequest(GameTestData.USER_LOOSE_GUESS)
-
                 val expected = GameTestData.getGameResponse()
                         .copy(statusId = GameStatus.LOST, userGuess = GameTestData.USER_LOOSE_GUESS)
+                val expectedPayment = GameTestData.getPayment()
+                        .copy(positiveFlag = false)
 
                 val result = buildRequest(GameTestData.USERNAME,
                     HttpMethod.POST,
@@ -217,6 +234,16 @@ class GameServiceIT(val gameRepository: GameRepository) : IntegrationTestBase() 
                         .responseBody
 
                 assertThat(result).isEqualTo(expected)
+                Awaitility.await()
+                        .atMost(Duration.ofSeconds(3))
+                        .untilAsserted {
+                            kafkaConsumer.poll(Duration.ofSeconds(100))
+                                    .lastOrNull()
+                                    ?.let {
+                                        assertThat(it.key()).isEqualTo(GameTestData.USERNAME)
+                                        assertThat(it.value()).isEqualTo(expectedPayment)
+                                    }
+                        }
             }
     }
 }

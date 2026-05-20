@@ -6,7 +6,7 @@ import com.dulfinne.randomgame.gameservice.dto.request.PaginationRequest
 import com.dulfinne.randomgame.gameservice.dto.response.GameResponse
 import com.dulfinne.randomgame.gameservice.service.GameService
 import com.dulfinne.randomgame.gameservice.util.ApiPaths
-import com.dulfinne.randomgame.gameservice.util.HeaderConstants
+import com.dulfinne.randomgame.gameservice.util.CommonConstants
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.GetMapping
@@ -28,14 +28,14 @@ class GameController(val gameService: GameService) {
 
     @GetMapping
     suspend fun getAllGamesByUsername(
-        @RequestHeader(HeaderConstants.USERNAME_HEADER) username: String,
+        @RequestHeader(CommonConstants.USERNAME_HEADER) username: String,
         @Valid request: PaginationRequest
     ): List<GameResponse> =
         gameService.getAllGamesByUsername(username, request)
 
     @GetMapping(ApiPaths.GAME_ID)
     suspend fun getGameById(
-        @RequestHeader(HeaderConstants.USERNAME_HEADER) username: String,
+        @RequestHeader(CommonConstants.USERNAME_HEADER) username: String,
         @PathVariable gameId: String
     ): GameResponse =
         gameService.getGameById(username, gameId)
@@ -43,14 +43,14 @@ class GameController(val gameService: GameService) {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     suspend fun createGame(
-        @RequestHeader(HeaderConstants.USERNAME_HEADER) username: String,
+        @RequestHeader(CommonConstants.USERNAME_HEADER) username: String,
         @RequestBody @Valid request: GameRequest
     ): GameResponse =
         gameService.createGame(username, request)
 
     @PostMapping("${ApiPaths.GAME_ID}${ApiPaths.GUESS}")
     suspend fun guessNumber(
-        @RequestHeader(HeaderConstants.USERNAME_HEADER) username: String,
+        @RequestHeader(CommonConstants.USERNAME_HEADER) username: String,
         @PathVariable gameId: String,
         @RequestBody @Valid request: GuessRequest
     ): GameResponse =

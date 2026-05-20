@@ -1,6 +1,7 @@
 package com.dulfinne.randomgame.gameservice.integration
 
-import com.dulfinne.randomgame.gameservice.util.HeaderConstants
+import com.dulfinne.randomgame.gameservice.kafka.config.KafkaProperties
+import com.dulfinne.randomgame.gameservice.util.CommonConstants
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
@@ -12,6 +13,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 
 @Testcontainers
@@ -24,14 +26,21 @@ abstract class IntegrationTestBase {
     @Autowired
     protected lateinit var webTestClient: WebTestClient
 
+    @Autowired
+    protected lateinit var kafkaProperties: KafkaProperties
+
     companion object {
         @Container
         val container = MongoDBContainer(DockerImageName.parse("mongo:8.0.4"))
 
+        @Container
+        val kafkaContainer = KafkaContainer(DockerImageName.parse("apache/kafka:3.9.1"))
+
         @JvmStatic
         @DynamicPropertySource
-        fun mongoProperties(registry: DynamicPropertyRegistry) {
+        fun testProperties(registry: DynamicPropertyRegistry) {
             registry.add("spring.data.mongodb.uri", container::getConnectionString)
+            registry.add("spring.kafka.bootstrap-servers", kafkaContainer::getBootstrapServers)
         }
     }
 
@@ -43,7 +52,7 @@ abstract class IntegrationTestBase {
     ): WebTestClient.RequestHeadersSpec<*> {
         val request = webTestClient.method(method)
                 .uri(uri)
-                .header(HeaderConstants.USERNAME_HEADER, username)
+                .header(CommonConstants.USERNAME_HEADER, username)
                 .contentType(MediaType.APPLICATION_JSON)
 
         return body?.let { request.bodyValue(it) } ?: request
