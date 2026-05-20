@@ -19,6 +19,9 @@ spring:
     topics:
       game-payments: game-payments-test-topic
 
+  client:
+    user-service: ${wiremock.server.baseUrl}
+
 payment:
   sender:
     type: kafka

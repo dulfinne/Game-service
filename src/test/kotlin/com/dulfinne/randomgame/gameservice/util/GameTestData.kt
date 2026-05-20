@@ -8,24 +8,41 @@ import java.math.BigDecimal
 
 object GameTestData {
 
-    const val ID = "id1"
-    const val USERNAME = "alex"
-    const val GUESSED_NUMBER = 13
-    const val USER_WIN_GUESS = GUESSED_NUMBER
-    const val USER_LOOSE_GUESS = GUESSED_NUMBER + 1
+  const val ID = "id1"
+  const val USERNAME = "alex"
+  const val GUESSED_NUMBER = 13
+  const val USER_WIN_GUESS = GUESSED_NUMBER
+  const val USER_LOOSE_GUESS = GUESSED_NUMBER + 1
 
-    val BID = BigDecimal.valueOf(20)
+  val BID = BigDecimal.valueOf(20)
+  val USER_BALANCE_OK = BID
+  val USER_BALANCE_LOW = BID.subtract(BigDecimal.ONE)
 
-    const val UNKNOWN_USERNAME = "unknown"
+  const val UNKNOWN_USERNAME = "unknown"
 
-    const val ID_FIELD = "id"
-    const val GUESSED_NUMBER_FIELD = "guessedNumber"
-    const val CREATED_AT_FIELD = "createdAt"
+  const val ID_FIELD = "id"
+  const val GUESSED_NUMBER_FIELD = "guessedNumber"
+  const val CREATED_AT_FIELD = "createdAt"
 
-    fun getGame() = Game(ID, USERNAME, GUESSED_NUMBER, USER_WIN_GUESS, BID, GameStatus.PENDING.id)
+  fun getGame() = Game(
+    ID,
+    USERNAME,
+    GUESSED_NUMBER,
+    USER_WIN_GUESS,
+    BID,
+    GameStatus.PENDING.id
+  )
 
-    fun getGameResponse() =
-        GameResponse(ID, USERNAME, GUESSED_NUMBER, USER_WIN_GUESS, BID, GameStatus.PENDING)
+  fun getGameResponse() =
+    GameResponse(
+      ID,
+      USERNAME,
+      GUESSED_NUMBER,
+      USER_WIN_GUESS,
+      BID,
+      GameStatus.PENDING
+    )
 
-    fun getPayment() = Payment(gameId = ID, amount = BID, username = USERNAME, positiveFlag = true)
+  fun getPayment() =
+    Payment(gameId = ID, amount = BID, username = USERNAME, positiveFlag = true)
 }

@@ -5,4 +5,6 @@ object ExceptionKeys {
     const val GAME_IS_FINISHED = "Cannot make a guess: game #%s is already finished"
     const val GAME_STATUS_ID_INVALID = "Invalid id for GameStatus: %d"
     const val UNKNOWN_ERROR = "An unknown error has occurred..."
+    const val NOT_ENOUGH_MONEY = "Balance has to be greater than %s"
+    const val CLIENT_ERROR = "Client exception: %s"
 }
